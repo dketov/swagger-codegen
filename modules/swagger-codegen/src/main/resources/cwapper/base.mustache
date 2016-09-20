@@ -1,5 +1,5 @@
 /*
-${api.description}
+{{{appDescription}}}
 */
 
 #include "cwapper.hpp"
@@ -32,14 +32,24 @@ cppcms::http::response& operator<<(cppcms::http::response& r, const cwapper::dat
 
 namespace cwapper {
 	restful::restful(cppcms::service &srv): cppcms::application(srv) {
-{% for r in api.routes %}\
-		dispatcher().assign("${r.re}", &restful::${r.fid}, this${r.args});
-{% end %}\
+	
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+	{{#operation}}
+		dispatcher().assign("{{path}}", &restful::_{{operationId}}, this{{#vendorExtensions.x-codegen-size}}, {{vendorExtensions.x-codegen-size}}{{/vendorExtensions.x-codegen-size}});
+	{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
 		dispatcher().assign("/__api__", &restful::__api__, this);
 	}
-	
-{% for r in api.routes %}\
-	void restful::${r.fid}(${r.signature}) {
+
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+	{{#operation}}
+	void restful::_{{operationId}}({{#allParameters}}{{name}}{{/allParameters}}) {
 		CORS();
 		
 		if (request().request_method() == "OPTIONS") {
@@ -70,24 +80,29 @@ namespace cwapper {
 {% end %}\
 		response().make_error_response(response().not_implemented);
 	}
-{% end %}\
-
+	{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
 // ---------------------------------------------------------------------
-		
-{% for r in api.routes %}\
-{% for m in r.path.methods %}\
-	cwapper::data restful::${m.operationId}(${m.signature}) {
-{% choose %}\
-{% when m.bodyparam %}\
-		return ${m.bodyparam.name};
-{% end %}\
-{% otherwise %}\
-		return cwapper::data();
-{% end %}\
-{% end %}\
-}
-{% end %}\
-{% end %}\
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+   {{#returnType}}{{{returnType}}}{{/returnType}}
+   {{^returnType}}cwapper::data{{/returnType}}
+   restful::{{operationId}}({{#allParams}}{{{dataType}}} {{paramName}}{{^required}}{{/required}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
+   {{#hasBodyParams}}
+   return {{#bodyParams}}{{paramName}}{{/bodyParams}};
+   {{/hasBodyParams}}
+   {{^hasBodyParams}}
+   return return cwapper::data();
+   {{/hasBodyParams}}
+   }
+ {{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
 
 	cwapper::data restful::body() {
 		std::pair<void*, ssize_t> post = request().raw_post_data();
