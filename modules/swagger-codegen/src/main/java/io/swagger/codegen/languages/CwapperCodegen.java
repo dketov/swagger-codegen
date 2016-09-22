@@ -20,39 +20,38 @@ import org.slf4j.LoggerFactory;
 public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
     protected static final Logger LOGGER = LoggerFactory.getLogger(CwapperCodegen.class);
 
-    /**
-     * Configures the type of generator.
-     * 
-     * @return the CodegenType for this generator
-     * @see io.swagger.codegen.CodegenType
-     */
     public CodegenType getTag() {
         return CodegenType.SERVER;
     }
 
-    /**
-     * Configures a friendly name for the generator. This will be used by the
-     * generator to select the library with the -l flag.
-     * 
-     * @return the friendly name for the generator
-     */
     public String getName() {
         return "cwapper";
     }
 
-    /**
-     * Returns human-friendly help for the generator. Provide the consumer with
-     * help tips, parameters here
-     * 
-     * @return A string value for the help message
-     */
     public String getHelp() {
         return "Generates a C++ API server with C++ cppcms lib";
     }
 
     public CwapperCodegen() {
         super();
+        
+        super.languageSpecificPrimitives = new HashSet<String>(
+                Arrays.asList("int", "char", "bool", "long", "float", "double", "int32_t", "int64_t"));
+                
+        super.typeMapping = new HashMap<String, String>();
+        typeMapping.put("string", "std::string");
+        typeMapping.put("integer", "int32_t");
+        typeMapping.put("long", "int64_t");
+        typeMapping.put("boolean", "bool");
+        typeMapping.put("array", "std::vector");
+        typeMapping.put("map", "std::map");
+        typeMapping.put("binary", "std::string");
 
+        super.importMapping = new HashMap<String, String>();
+        importMapping.put("std::vector", "#include <vector>");
+        importMapping.put("std::map", "#include <map>");
+        importMapping.put("std::string", "#include <string>");
+     
         supportingFiles.add(new SupportingFile("base.mustache", "", "base.cpp"));
         supportingFiles.add(new SupportingFile("service.mustache", "", "service.cpp"));
         supportingFiles.add(new SupportingFile("restful.mustache", "", "restful.hpp"));
@@ -62,54 +61,132 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
 
     public void preprocessSwagger(Swagger swagger) {
 		Map<String, Path> swaggerPaths = swagger.getPaths();
+		
+		if(swaggerPaths == null)
+			return;
 
 		for(String uri: swaggerPaths.keySet()) {
 			Path path = swaggerPaths.get(uri);
-			String RE = uri;
+			int paramQty = 0;
 
-			if(path.getParameters() != null) {
-				for(Parameter param: path.getParameters()) {
-					LOGGER.warn(param.toString());
-					//~ if(!(param instanceof PathParameter))
-						//~ continue;
+			path.setVendorExtension("x-cwappper-path", uri.replace("/", "_").replace("{", "").replace("}", ""));
+
+			if(path.getOperations() == null)
+				continue;
+
+			for(Operation op: path.getOperations()) {
+				
+				if(op.getParameters() == null)
+					continue;
+
+				for(Parameter param: op.getParameters()) {
+					if(!(param instanceof PathParameter))
+						continue;
 						
 					String uriParam = String.format("{%s}", param.getName());
 					String pattern = "([^/]+)"; // type == string or whatever
-					if(((PathParameter)param).getType() == "integer") {
+					if(((PathParameter)param).getType() == "integer")
 						pattern = "(\\\\d+)";
-					}
 					
 					if(uri.contains(uriParam)) {
-						LOGGER.warn(uri);
-						LOGGER.warn(uriParam);	
-						RE = RE.replace(uriParam, pattern);
+						uri = uri.replace(uriParam, pattern);
+						paramQty++;
 					}
 				}
 				
-				path.setVendorExtension("x-cppcms-argsQty", path.getParameters().size());
-			} else { LOGGER.warn(path.toString()); }
-			
-			path.setVendorExtension("x-cppcms-RE", RE);
-			path.setVendorExtension("x-pathName", uri.replace("/", "_").replace("{", "").replace("}", ""));
+			}
+				
+			path.setVendorExtension("x-cwappper-paramQty", paramQty);
+			path.setVendorExtension("x-cwappper-uri", uri);
 		}
 		
-		additionalProperties().put("paths", swaggerPaths.values());
+		additionalProperties().put("x-cwappper-paths", swaggerPaths.values());
 	}
 
+	private String cwapperRE(CodegenOperation op) {
+		String RE = op.path;
+		
+		for(CodegenParameter param: op.pathParams) {
+			String pathParam = String.format("{%s}", param.baseName);
+			String pattern = "([^/]+)"; // param.isString == string or whatever
 
+			//if(param.isInteger || param.isLong) o_O NullPointerException ???
+				//~ pattern = "(\\\\d+)";
+				
+			//~ if(param.isFloat || param.isDouble)
+				//~ pattern = "(\\\\d*\\\\.\\\\d*)"; // FIX me
+
+			if(RE.contains(pathParam))
+				RE = RE.replace(pathParam, pattern);
+		}
+		
+		return RE;
+	}
+						
     public Map<String, Object> postProcessOperations(Map<String, Object> objs) {
         Map<String, Object> operations = (Map<String, Object>) objs.get("operations");
-        if (operations != null) {
-            List<CodegenOperation> ops = (List<CodegenOperation>) operations.get("operation");
-            for (CodegenOperation operation : ops) {
+        if (operations == null)
+			return objs;
+		
+		List<CodegenOperation> ops = (List<CodegenOperation>) operations.get("operation");
+		if (ops == null)
+			return objs;
+		
+		class CwapperPath {
+			public String path, re, fid;
 
+			public List<CodegenOperation> operations = new ArrayList<CodegenOperation>();
+			private Set<String> pathParams = new HashSet<String>();
+				
+			CwapperPath(String _path, String _re) {
+				path = _path;
+				re = _re;
+				fid = path.replace("/", "_").replace("{", "").replace("}", "");
 			}
-        }
-         
+			public String toString() {
+				return String.format("%s->%s", path, operations.toString());
+			}
+			public boolean hasPathParams() { return !pathParams.isEmpty(); }
+
+			public void add(CodegenOperation op) {	
+				LOGGER.warn(op.toString());
+				LOGGER.warn(op.pathParams.toString());
+				for(CodegenParameter p: op.pathParams)
+					pathParams.add(p.baseName);
+			
+				operations.add(op);
+			}
+		}
+		
+		Map<String, CwapperPath> cwapperMap = new HashMap<String, CwapperPath> ();
+			
+		for(CodegenOperation operation : ops) {
+			String re = cwapperRE(operation);
+			CwapperPath p = cwapperMap.get(operation.path);
+			
+			if(p == null) {
+				p = new CwapperPath(operation.path, re);
+				cwapperMap.put(operation.path, p);
+			}
+			
+			p.add(operation);
+		}
+
+		List<CwapperPath> xcwapper = (List<CwapperPath>)additionalProperties().get("x-cwapper");
+		if(xcwapper == null)
+			additionalProperties().put("x-cwapper", new ArrayList<CwapperPath>(cwapperMap.values()));
+		else
+			xcwapper.addAll(cwapperMap.values());
+		
+        LOGGER.warn(cwapperMap.entrySet().toString());
         return objs;
     }      
     
     public String escapeUnsafeCharacters(String input) {
         return input;
+    }
+
+    public String escapeQuotationMark(String input) {
+        return input.replace("\"", "\\\"");
     }
 }

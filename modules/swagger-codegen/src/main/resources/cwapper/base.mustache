@@ -1,4 +1,3 @@
-
 /*
 {{{appDescription}}}
 */
@@ -33,20 +32,15 @@ cppcms::http::response& operator<<(cppcms::http::response& r, const cwapper::dat
 
 namespace cwapper {
 	restful::restful(cppcms::service &srv): cppcms::application(srv) {
-	
-{{#paths}}
-{{#vendorExtensions}}
-		dispatcher().assign("{{x-cppcms-RE}}", &restful::{{x-pathName}}, this{{#x-cppcms-argsQty}}, {{x-cppcms-argsQty}}{{/x-cppcms-argsQty}});
-{{/vendorExtensions}}
-{{/paths}}
+{{#x-cwapper}}
+		dispatcher().assign("{{re}}", &restful::{{fid}}, this{{#hasPathParams}}, {{pathParams.size}}{{/hasPathParams}});
+{{/x-cwapper}}
+
 		dispatcher().assign("/__api__", &restful::__api__, this);
 	}
 
-{{#apiInfo}}
-{{#apis}}
-{{#operations}}
-	{{#operation}}
-	void restful::_{{operationId}}({{#allParameters}}{{name}}{{/allParameters}}) {
+{{#x-cwapper}}
+	void restful::{{fid}}({{#pathParameters}}{{name}}{{/pathParameters}}) {
 		CORS();
 		
 		if (request().request_method() == "OPTIONS") {
@@ -77,10 +71,8 @@ namespace cwapper {
 {% end %}\
 		response().make_error_response(response().not_implemented);
 	}
-	{{/operation}}
-{{/operations}}
-{{/apis}}
-{{/apiInfo}}
+{{/x-cwapper}}
+
 // ---------------------------------------------------------------------
 {{#apiInfo}}
 {{#apis}}
