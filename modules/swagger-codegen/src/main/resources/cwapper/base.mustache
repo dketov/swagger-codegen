@@ -1,3 +1,4 @@
+
 /*
 {{{appDescription}}}
 */
@@ -33,15 +34,11 @@ cppcms::http::response& operator<<(cppcms::http::response& r, const cwapper::dat
 namespace cwapper {
 	restful::restful(cppcms::service &srv): cppcms::application(srv) {
 	
-{{#apiInfo}}
-{{#apis}}
-{{#operations}}
-	{{#operation}}
-		dispatcher().assign("{{path}}", &restful::_{{operationId}}, this{{#vendorExtensions.x-codegen-size}}, {{vendorExtensions.x-codegen-size}}{{/vendorExtensions.x-codegen-size}});
-	{{/operation}}
-{{/operations}}
-{{/apis}}
-{{/apiInfo}}
+{{#paths}}
+{{#vendorExtensions}}
+		dispatcher().assign("{{x-cppcms-RE}}", &restful::{{x-pathName}}, this{{#x-cppcms-argsQty}}, {{x-cppcms-argsQty}}{{/x-cppcms-argsQty}});
+{{/vendorExtensions}}
+{{/paths}}
 		dispatcher().assign("/__api__", &restful::__api__, this);
 	}
 
@@ -89,14 +86,12 @@ namespace cwapper {
 {{#apis}}
 {{#operations}}
 {{#operation}}
-   {{#returnType}}{{{returnType}}}{{/returnType}}
-   {{^returnType}}cwapper::data{{/returnType}}
-   restful::{{operationId}}({{#allParams}}{{{dataType}}} {{paramName}}{{^required}}{{/required}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
+   cwapper::data restful::{{operationId}}({{#allParams}}{{{dataType}}} {{paramName}}{{^required}}{{/required}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
    {{#hasBodyParams}}
-   return {{#bodyParams}}{{paramName}}{{/bodyParams}};
+		return {{#bodyParams}}{{paramName}}{{/bodyParams}};
    {{/hasBodyParams}}
    {{^hasBodyParams}}
-   return return cwapper::data();
+		return return cwapper::data();
    {{/hasBodyParams}}
    }
  {{/operation}}
