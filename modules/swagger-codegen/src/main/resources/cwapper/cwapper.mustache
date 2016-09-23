@@ -24,25 +24,27 @@
 #include <boost/property_tree/exceptions.hpp>
 
 namespace cwapper {
-	typedef std::vector<std::string> stringarray;
-	typedef boost::variant<std::string, stringarray> parameter;
-	typedef std::map<std::string, parameter> qstring;
+    typedef boost::variant<
+        std::string,
+        std::vector<std::string>
+    > parameter;
+    typedef std::map<std::string, parameter> qstring;
 
-	enum contentType { JSON, XML };
-	
-	struct data {
-		contentType type;
-		boost::property_tree::ptree tree;
+    enum contentType { JSON, XML };
 
-		data(contentType value = JSON) { type = value; };
-		std::string mimeType() const { 
-			std::string contentTypes[] = { "application/json", "text/xml" };
+    struct data {
+        contentType type;
+        boost::property_tree::ptree tree;
 
-			return contentTypes[this->type];
-		}; 
-	};
-	
-	class error: std::exception {};
+        data(contentType value = JSON) { type = value; };
+        std::string mimeType() const {
+            std::string contentTypes[] = { "application/json", "text/xml" };
+
+            return contentTypes[this->type];
+        };
+    };
+
+    class error: std::exception {};
 }
 
 #endif

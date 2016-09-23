@@ -6,175 +6,185 @@
 #include "restful.hpp"
 
 std::ostream& operator<<(std::ostream& out, const std::vector<std::string>& v) {
-	if (!v.empty()) {
-		std::copy(v.begin(), v.end(), std::ostream_iterator<std::string>(out, ", "));
-	}
-	return out;
+    if (!v.empty()) {
+        std::copy(v.begin(), v.end(), std::ostream_iterator<std::string>(out, ", "));
+    }
+    return out;
 }
 
 std::ostream& operator<<(std::ostream& out, const cwapper::data& v) {
-	if(v.type == cwapper::JSON) {
-		boost::property_tree::json_parser::write_json(out, v.tree);
-	}
-	if(v.type == cwapper::XML) {
-		boost::property_tree::xml_parser::write_xml(out, v.tree);
-	}
-	return out;
+    if(v.type == cwapper::JSON) {
+        boost::property_tree::json_parser::write_json(out, v.tree);
+    }
+    if(v.type == cwapper::XML) {
+        boost::property_tree::xml_parser::write_xml(out, v.tree);
+    }
+    return out;
 }
 
 cppcms::http::response& operator<<(cppcms::http::response& r, const cwapper::data& v) {
-	r.set_header("Content-Type", v.mimeType());
+    r.set_header("Content-Type", v.mimeType());
 
-	r.out() << v;
-	
-	return r;
+    r.out() << v;
+
+    return r;
 }
 
 namespace cwapper {
-	restful::restful(cppcms::service &srv): cppcms::application(srv) {
+  {{#models}}
+  {{#model}}
+    typedef cwapper::data {{name}};
+  {{/model}}
+  {{/models}}
+    
+    restful::restful(cppcms::service &srv): cppcms::application(srv) {
 {{#x-cwapper}}
-		dispatcher().assign("{{re}}", &restful::{{fid}}, this{{#hasPathParams}}, {{pathParams.size}}{{/hasPathParams}});
+        dispatcher().assign("{{re}}", &restful::{{fid}}, this{{#hasPathParams}}, {{pathParams.size}}{{/hasPathParams}});
 {{/x-cwapper}}
 
-		dispatcher().assign("/__api__", &restful::__api__, this);
-	}
+        dispatcher().assign("/__api__", &restful::__api__, this);
+    }
 
 {{#x-cwapper}}
-	void restful::{{fid}}({{#pathParameters}}{{name}}{{/pathParameters}}) {
-		CORS();
-		
-		if (request().request_method() == "OPTIONS") {
-			return;
-		}
-			
-{% for m in r.path.methods %}\
-		
-		// ${m.summary}
-{% if m.description %}\
-		// ${m.description}
-{% end %}\
-		if (request().request_method() == "${m.name}") {
-{% for p in m.parameters %}\
-			// ${p.name}: ${p.description}
-			${p.retrieve};
-			
-{% end %}\
-			std::cout << "DEBUG <method>: ${m.name} " << request().path_info()
-{% for p in m.parameters %}\
-				<< std::endl << "\\t${p.name}=" << ${p.surname}
-{% end %}\
-			<< std::endl;
-			
-			response() << ${m.operationId}(${m.call});
-			return;
-		}
-{% end %}\
-		response().make_error_response(response().not_implemented);
-	}
+    void restful::{{fid}}({{#pathParams}}{{dataType}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/pathParams}}) {
+        CORS();
+
+        if (request().request_method() == "OPTIONS") {
+            return;
+        }
+
+{{#operations}}
+        // {{summary}}
+{{#description}}
+        // {{.}}
+{{/description}}
+        if (request().request_method() == "{{httpMethod}}") {
+{{#allParams}}
+            // {{paramName}}: {{description}}
+{{#isBodyParam}}
+            cwapper::data {{paramName}} = restful::body();
+{{/isBodyParam}}
+{{^isBodyParam}}
+            {{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}} {{paramName}} =
+                boost::get<{{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}}>(restful::parameter("{{paramName}}"));
+{{/isBodyParam}}
+{{/allParams}}
+
+            std::cout << "DEBUG <method>: ${m.name} " << request().path_info()
+{{#allParams}}
+                << std::endl << "\\t{{paramName}}=" << {{paramName}}
+{{/allParams}}
+
+            << std::endl;
+
+            response() << restful::{{operationId}}({{#allParams}}{{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}});
+            return;
+        }
+{{/operations}}
+
+        response().make_error_response(response().not_implemented);
+    }
+
 {{/x-cwapper}}
 
 // ---------------------------------------------------------------------
-{{#apiInfo}}
-{{#apis}}
+{{#x-cwapper}}
 {{#operations}}
-{{#operation}}
-   cwapper::data restful::{{operationId}}({{#allParams}}{{{dataType}}} {{paramName}}{{^required}}{{/required}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
-   {{#hasBodyParams}}
-		return {{#bodyParams}}{{paramName}}{{/bodyParams}};
-   {{/hasBodyParams}}
-   {{^hasBodyParams}}
-		return return cwapper::data();
-   {{/hasBodyParams}}
-   }
- {{/operation}}
+    {{#returnType}}{{returnType}}{{^returnSimpleType}}<{{returnBaseType}}>{{/returnSimpleType}}{{/returnType}}{{^returnType}}cwapper::data{{/returnType}} restful::{{operationId}}({{#allParams}}{{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
+    {{#bodyParams}}
+        return {{paramName}};
+    {{/bodyParams}}
+    {{^bodyParams}}
+        return cwapper::data();
+    {{/bodyParams}}
+    }
 {{/operations}}
-{{/apis}}
-{{/apiInfo}}
+{{/x-cwapper}}
 
-	cwapper::data restful::body() {
-		std::pair<void*, ssize_t> post = request().raw_post_data();
-		std::istringstream ss(std::string((char *)post.first, post.second));
+    cwapper::data restful::body() {
+        std::pair<void*, ssize_t> post = request().raw_post_data();
+        std::istringstream ss(std::string((char *)post.first, post.second));
 
-		std::cerr << "DEBUG <body>:\t " << request().content_type() << std::endl;
+        std::cerr << "DEBUG <body>:\t " << request().content_type() << std::endl;
 
-		boost::property_tree::ptree tree;
-		cwapper::data data;
-	
-		if (request().content_type() == "application/json") {
-			data.type = cwapper::JSON;
-			try {
-				boost::property_tree::json_parser::read_json(ss, tree);
-			} catch (boost::property_tree::json_parser::json_parser_error &e) {
-				response().make_error_response(response().bad_request, e.what());
-				throw cwapper::error();
-			}
-		}
-		if (request().content_type() == "text/xml" ||
-			request().content_type() == "application/xml" ) {
-			data.type = cwapper::XML;
-			try {
-				boost::property_tree::xml_parser::read_xml(ss, tree);
-			} catch (boost::property_tree::xml_parser::xml_parser_error &e) {
-				response().make_error_response(response().bad_request, e.what());
-				throw cwapper::error();
-			}
-		}
-		data.tree = tree;
-		return data;
-	}
-		
-	cwapper::parameter restful::parameter(std::string name) {
-		cppcms::http::request::form_type form = request().post_or_get();
-		cwapper::parameter result;
+        boost::property_tree::ptree tree;
+        cwapper::data data;
 
-		for(cppcms::http::request::form_type::iterator it = form.begin(); it != form.end(); it++) {
-			std::string key = it->first, value = it->second;
+        if (request().content_type() == "application/json") {
+            data.type = cwapper::JSON;
+            try {
+                boost::property_tree::json_parser::read_json(ss, tree);
+            } catch (boost::property_tree::json_parser::json_parser_error &e) {
+                response().make_error_response(response().bad_request, e.what());
+                throw cwapper::error();
+            }
+        }
+        if (request().content_type() == "text/xml" ||
+            request().content_type() == "application/xml" ) {
+            data.type = cwapper::XML;
+            try {
+                boost::property_tree::xml_parser::read_xml(ss, tree);
+            } catch (boost::property_tree::xml_parser::xml_parser_error &e) {
+                response().make_error_response(response().bad_request, e.what());
+                throw cwapper::error();
+            }
+        }
+        data.tree = tree;
+        return data;
+    }
 
-			if(key != name)
-				continue;
+    cwapper::parameter restful::parameter(std::string name) {
+        cppcms::http::request::form_type form = request().post_or_get();
+        cwapper::parameter result;
 
-			try {
-				cwapper::stringarray& array = boost::get<cwapper::stringarray>(result);
-				array.push_back(value);
-				continue;
-			} catch(boost::bad_get e) {}
+        for(cppcms::http::request::form_type::iterator it = form.begin(); it != form.end(); it++) {
+            std::string key = it->first, value = it->second;
 
-			std::string& old = boost::get<std::string>(result);
-			if(old.empty()) {
-				result = value;
-			} else {
-				cwapper::stringarray array;
-				array.push_back(old);
-				array.push_back(value);
-				result = array;
-			}
-		}
+            if(key != name)
+                continue;
 
-		return result;
-	}
-	
-	void restful::CORS() {
-		response().set_header("Content-Type",
-			request().http_accept());
-			
-		response().set_header("Access-Control-Allow-Origin", "*");
-		response().set_header("Access-Control-Allow-Headers",
-			request().getenv("HTTP_ACCESS_CONTROL_REQUEST_HEADERS"));
-		response().set_header("Access-Control-Allow-Methods",
-			request().getenv("HTTP_ACCESS_CONTROL_REQUEST_METHOD"));
-	}
-	
-	void restful::__api__() {
-		CORS();
-		std::string accept = request().http_accept();
-		
-		if(boost::algorithm::contains(accept, "text/yaml")) {
-			response().set_header("Content-Type", "text/yaml");
-			response().out() << "${api.__yaml__}";
-			return;
-		}
+            try {
+                std::vector<std::string>& array = boost::get<std::vector<std::string>>(result);
+                array.push_back(value);
+                continue;
+            } catch(boost::bad_get e) {}
 
-		response().set_header("Content-Type", "application/json");
-		response().out() << "${api.__json__}";
-	}
+            std::string& old = boost::get<std::string>(result);
+            if(old.empty()) {
+                result = value;
+            } else {
+                std::vector<std::string> array;
+                array.push_back(old);
+                array.push_back(value);
+                result = array;
+            }
+        }
+
+        return result;
+    }
+
+    void restful::CORS() {
+        response().set_header("Content-Type",
+            request().http_accept());
+
+        response().set_header("Access-Control-Allow-Origin", "*");
+        response().set_header("Access-Control-Allow-Headers",
+            request().getenv("HTTP_ACCESS_CONTROL_REQUEST_HEADERS"));
+        response().set_header("Access-Control-Allow-Methods",
+            request().getenv("HTTP_ACCESS_CONTROL_REQUEST_METHOD"));
+    }
+
+    void restful::__api__() {
+        CORS();
+        std::string accept = request().http_accept();
+
+        if(boost::algorithm::contains(accept, "text/yaml")) {
+            response().set_header("Content-Type", "text/yaml");
+            response().out() << "${api.__yaml__}";
+            return;
+        }
+
+        response().set_header("Content-Type", "application/json");
+        response().out() << "${api.__json__}";
+    }
 }
