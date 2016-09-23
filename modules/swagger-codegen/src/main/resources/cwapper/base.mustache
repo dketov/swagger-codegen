@@ -31,12 +31,6 @@ cppcms::http::response& operator<<(cppcms::http::response& r, const cwapper::dat
 }
 
 namespace cwapper {
-  {{#models}}
-  {{#model}}
-    typedef cwapper::data {{name}};
-  {{/model}}
-  {{/models}}
-    
     restful::restful(cppcms::service &srv): cppcms::application(srv) {
 {{#x-cwapper}}
         dispatcher().assign("{{re}}", &restful::{{fid}}, this{{#hasPathParams}}, {{pathParams.size}}{{/hasPathParams}});
@@ -90,7 +84,7 @@ namespace cwapper {
 // ---------------------------------------------------------------------
 {{#x-cwapper}}
 {{#operations}}
-    {{#returnType}}{{returnType}}{{^returnSimpleType}}<{{returnBaseType}}>{{/returnSimpleType}}{{/returnType}}{{^returnType}}cwapper::data{{/returnType}} restful::{{operationId}}({{#allParams}}{{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
+    virtual {{#returnType}}{{returnType}}{{^returnSimpleType}}<{{returnBaseType}}>{{/returnSimpleType}}{{/returnType}}{{^returnType}}cwapper::data{{/returnType}} restful::{{operationId}}({{#allParams}}{{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
     {{#bodyParams}}
         return {{paramName}};
     {{/bodyParams}}

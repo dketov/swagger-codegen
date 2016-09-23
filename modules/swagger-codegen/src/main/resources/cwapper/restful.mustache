@@ -4,23 +4,34 @@
 #include "cwapper.hpp"
 
 namespace cwapper {
-	class restful: public cppcms::application {
-	public:
-		restful(cppcms::service &);
-	
-{% for r in api.routes %}\
-		void ${r.fid}(${r.signature});
-{% for m in r.path.methods %}\
-		virtual cwapper::data ${m.operationId}(${m.signature});
-{% end %}
-{% end %}\
-{% end %}\
-	private:
-		cwapper::data body();
-		cwapper::parameter parameter(std::string);
-		void CORS();
-		void __api__();	
-	};
+{{#models}}
+{{#model}}
+    typedef cwapper::data {{name}};
+{{/model}}
+{{/models}}
+  
+    class restful: public cppcms::application {
+    public:
+        restful(cppcms::service &);
+
+{{#x-cwapper}}
+{{#operations}}
+    virtual {{#returnType}}{{returnType}}{{^returnSimpleType}}<{{returnBaseType}}>{{/returnSimpleType}}{{/returnType}}{{^returnType}}cwapper::data{{/returnType}} {{operationId}}({{#allParams}}{{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
+    {{#bodyParams}}
+        return {{paramName}};
+    {{/bodyParams}}
+    {{^bodyParams}}
+        return cwapper::data();
+    {{/bodyParams}}
+    }
+{{/operations}}
+{{/x-cwapper}}
+    private:
+        cwapper::data body();
+        cwapper::parameter parameter(std::string);
+        void CORS();
+        void __api__();
+    };
 }
 
 #endif
