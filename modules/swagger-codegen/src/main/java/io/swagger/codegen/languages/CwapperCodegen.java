@@ -52,10 +52,11 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
         importMapping.put("std::map", "#include <map>");
         importMapping.put("std::string", "#include <string>");
      
-        supportingFiles.add(new SupportingFile("base.mustache", "", "base.cpp"));
-        supportingFiles.add(new SupportingFile("service.mustache", "", "service.cpp"));
-        supportingFiles.add(new SupportingFile("restful.mustache", "", "restful.hpp"));
-        supportingFiles.add(new SupportingFile("cwapper.mustache", "", "cwapper.hpp"));  
+        supportingFiles.add(new SupportingFile("base.cpp.mustache", "", "base.cpp"));
+        supportingFiles.add(new SupportingFile("service.cpp.mustache", "", "service.cpp"));
+        supportingFiles.add(new SupportingFile("restful.hpp.mustache", "", "restful.hpp"));
+        supportingFiles.add(new SupportingFile("cwapper.hpp", "", "cwapper.hpp"));  
+        supportingFiles.add(new SupportingFile("CMakeLists.txt", "", "CMakeLists.txt")); 
     }
 
 
