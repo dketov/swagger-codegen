@@ -13,11 +13,6 @@ add_dependencies(api ui)
 target_link_libraries(api cppcms booster)
 
 add_custom_command(
-	OUTPUT base.cpp service.cpp
-	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/../../cwapper.py ${CMAKE_CURRENT_SOURCE_DIR}/api.yaml
-)
-
-add_custom_command(
 	OUTPUT master.zip
 	COMMAND wget -c https://github.com/swagger-api/swagger-ui/archive/master.zip
 )

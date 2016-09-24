@@ -1,7 +1,9 @@
 package io.swagger.codegen.languages;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.swagger.codegen.*;
-import io.swagger.codegen.examples.ExampleGenerator;
 import io.swagger.models.Model;
 import io.swagger.models.Operation;
 import io.swagger.models.Response;
@@ -9,6 +11,7 @@ import io.swagger.models.Swagger;
 import io.swagger.models.properties.*;
 import io.swagger.models.Path;
 import io.swagger.models.parameters.*;
+import io.swagger.util.Yaml;
 
 import java.util.*;
 import java.io.File;
@@ -34,11 +37,13 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
 
     public CwapperCodegen() {
         super();
-        
-        super.languageSpecificPrimitives = new HashSet<String>(
+
+        templateDir = getName();
+
+        languageSpecificPrimitives = new HashSet<String>(
                 Arrays.asList("int", "char", "bool", "long", "float", "double", "int32_t", "int64_t"));
-                
-        super.typeMapping = new HashMap<String, String>();
+
+        typeMapping = new HashMap<String, String>();
         typeMapping.put("string", "std::string");
         typeMapping.put("integer", "int32_t");
         typeMapping.put("long", "int64_t");
@@ -47,22 +52,16 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
         typeMapping.put("map", "std::map");
         typeMapping.put("binary", "std::string");
 
-        super.importMapping = new HashMap<String, String>();
-        importMapping.put("std::vector", "#include <vector>");
-        importMapping.put("std::map", "#include <map>");
-        importMapping.put("std::string", "#include <string>");
-     
-        supportingFiles.add(new SupportingFile("base.cpp.mustache", "", "base.cpp"));
-        supportingFiles.add(new SupportingFile("service.cpp.mustache", "", "service.cpp"));
-        supportingFiles.add(new SupportingFile("restful.hpp.mustache", "", "restful.hpp"));
-        supportingFiles.add(new SupportingFile("cwapper.hpp", "", "cwapper.hpp"));  
-        supportingFiles.add(new SupportingFile("CMakeLists.txt", "", "CMakeLists.txt")); 
+        supportingFiles.add(new SupportingFile("base.cpp.mustache", ".", "base.cpp"));
+        supportingFiles.add(new SupportingFile("service.cpp.mustache", ".", "service.cpp"));
+        supportingFiles.add(new SupportingFile("restful.hpp.mustache", ".", "restful.hpp"));
+        supportingFiles.add(new SupportingFile("cwapper.hpp", ".", "cwapper.hpp"));
+        supportingFiles.add(new SupportingFile("CMakeLists.txt", ".", "CMakeLists.txt"));
     }
-
 
     public void preprocessSwagger(Swagger swagger) {
         Map<String, Path> swaggerPaths = swagger.getPaths();
-        
+
         if(swaggerPaths == null)
             return;
 
@@ -76,69 +75,69 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
                 continue;
 
             for(Operation op: path.getOperations()) {
-                
+
                 if(op.getParameters() == null)
                     continue;
 
                 for(Parameter param: op.getParameters()) {
                     if(!(param instanceof PathParameter))
                         continue;
-                        
+
                     String uriParam = String.format("{%s}", param.getName());
                     String pattern = "([^/]+)"; // type == string or whatever
                     if(((PathParameter)param).getType() == "integer")
                         pattern = "(\\\\d+)";
-                    
+
                     if(uri.contains(uriParam)) {
                         uri = uri.replace(uriParam, pattern);
                         paramQty++;
                     }
                 }
-                
+
             }
-                
+
             path.setVendorExtension("x-cwappper-paramQty", paramQty);
             path.setVendorExtension("x-cwappper-uri", uri);
         }
-        
+
         additionalProperties().put("x-cwappper-paths", swaggerPaths.values());
     }
 
     private String cwapperRE(CodegenOperation op) {
         String RE = op.path;
-        
+
         for(CodegenParameter param: op.pathParams) {
             String pathParam = String.format("{%s}", param.baseName);
             String pattern = "([^/]+)"; // param.isString == string or whatever
 
             //if(param.isInteger || param.isLong) o_O NullPointerException ???
                 //~ pattern = "(\\\\d+)";
-                
+
             //~ if(param.isFloat || param.isDouble)
                 //~ pattern = "(\\\\d*\\\\.\\\\d*)"; // FIX me
 
             if(RE.contains(pathParam))
                 RE = RE.replace(pathParam, pattern);
         }
-        
+
         return RE;
     }
-                        
+
     public Map<String, Object> postProcessOperations(Map<String, Object> objs) {
         Map<String, Object> operations = (Map<String, Object>) objs.get("operations");
         if (operations == null)
             return objs;
-        
+
         List<CodegenOperation> ops = (List<CodegenOperation>) operations.get("operation");
         if (ops == null)
             return objs;
-        
+
         class CwapperPath {
             public String path, re, fid;
 
             public List<CodegenOperation> operations = new ArrayList<CodegenOperation>();
             public List<CodegenParameter> pathParams = null;
-                
+
             CwapperPath(String _path, String _re) {
                 path = _path;
                 re = _re;
@@ -149,26 +148,24 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
             }
             public boolean hasPathParams() { return !pathParams.isEmpty(); }
 
-            public void add(CodegenOperation op) {  
-                //~ LOGGER.warn(op.toString());
-                //~ LOGGER.warn(op.pathParams.toString());
+            public void add(CodegenOperation op) {
                 pathParams = op.pathParams;
-            
+
                 operations.add(op);
             }
         }
-        
+
         Map<String, CwapperPath> cwapperMap = new HashMap<String, CwapperPath> ();
-            
+
         for(CodegenOperation operation : ops) {
             String re = cwapperRE(operation);
             CwapperPath p = cwapperMap.get(operation.path);
-            
+
             if(p == null) {
                 p = new CwapperPath(operation.path, re);
                 cwapperMap.put(operation.path, p);
             }
-            
+
             p.add(operation);
         }
 
@@ -177,11 +174,33 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
             additionalProperties().put("x-cwapper", new ArrayList<CwapperPath>(cwapperMap.values()));
         else
             xcwapper.addAll(cwapperMap.values());
-        
-        LOGGER.warn(cwapperMap.entrySet().toString());
+
         return objs;
-    }      
-    
+    }
+
+    public Map<String, Object> postProcessSupportingFileData(Map<String, Object> objs) {
+        Swagger swagger = (Swagger)objs.get("swagger");
+        if(swagger != null) {
+            try {
+                objs.put("swagger-yaml", Yaml.mapper().writeValueAsString(swagger)
+                                                      .replace("\\", "\\\\")
+                                                      .replace("\"", "\\\"")
+                                                      .replace("\n", "\\n"));
+            } catch (JsonProcessingException e) {
+                LOGGER.error(e.getMessage(), e);
+            }
+            try {
+                objs.put("swagger-json", new ObjectMapper().writeValueAsString(swagger)
+                                                      .replace("\\", "\\\\")
+                                                      .replace("\"", "\\\"")
+                                                      .replace("\n", "\\n"));
+            } catch (JsonProcessingException e) {
+                LOGGER.error(e.getMessage(), e);
+            }
+        }
+        return super.postProcessSupportingFileData(objs);
+    }
+
     public String escapeUnsafeCharacters(String input) {
         return input;
     }

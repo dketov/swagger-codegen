@@ -8,11 +8,11 @@
 
 class service: public cwapper::restful {
 public:
-    service(cppcms::service &srv): restful::restful(srv) {};
+    service(cppcms::service &srv): restful(srv) {};
 
+{{#x-cwapper}}
 {{#operations}}
-    virtual {{#returnType}}{{returnType}}{{^returnSimpleType}}<{{returnBaseType}}>{{/returnSimpleType}}{{/returnType}}{{^returnType}}void{{/returnType}} restful::{{operationId}}({{#allParams}}{{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
-        // Implementation goes here
+    {{#returnType}}{{returnType}}{{^returnSimpleType}}<{{returnBaseType}}>{{/returnSimpleType}}{{/returnType}}{{^returnType}}void{{/returnType}} {{operationId}}({{#allParams}}{{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
     {{#bodyParams}}
         return{{#returnType}} {{paramName}}{{/returnType}};
     {{/bodyParams}}
@@ -21,6 +21,7 @@ public:
     {{/bodyParams}}
     }
 {{/operations}}
+{{/x-cwapper}}
 
 };
 
