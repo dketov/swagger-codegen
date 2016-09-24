@@ -1,6 +1,6 @@
 /*
 {{{appDescription}}}
-						Please EDIT this file
+                        Please EDIT this file
 */
 
 #include "cwapper.hpp"
@@ -8,11 +8,11 @@
 
 class service: public cwapper::restful {
 public:
-	service(cppcms::service &srv): restful::restful(srv) {};
-	
+    service(cppcms::service &srv): restful::restful(srv) {};
+
 {{#operations}}
-	virtual {{#returnType}}{{returnType}}{{^returnSimpleType}}<{{returnBaseType}}>{{/returnSimpleType}}{{/returnType}}{{^returnType}}void{{/returnType}} restful::{{operationId}}({{#allParams}}{{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
-		// Implementation goes here
+    virtual {{#returnType}}{{returnType}}{{^returnSimpleType}}<{{returnBaseType}}>{{/returnSimpleType}}{{/returnType}}{{^returnType}}void{{/returnType}} restful::{{operationId}}({{#allParams}}{{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
+        // Implementation goes here
     {{#bodyParams}}
         return{{#returnType}} {{paramName}}{{/returnType}};
     {{/bodyParams}}
@@ -25,11 +25,11 @@ public:
 };
 
 int main(int argc,char ** argv) {
-	try {
-		cppcms::service srv(argc,argv);
-		srv.applications_pool().mount(cppcms::applications_factory<service>());
-		srv.run();
-	} catch(std::exception const &e) {
-		std::cerr << e.what() << std::endl;
-	}
+    try {
+        cppcms::service srv(argc,argv);
+        srv.applications_pool().mount(cppcms::applications_factory<service>());
+        srv.run();
+    } catch(std::exception const &e) {
+        std::cerr << e.what() << std::endl;
+    }
 }
