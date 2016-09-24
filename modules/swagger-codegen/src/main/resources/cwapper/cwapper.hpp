@@ -10,7 +10,6 @@
 #include <cppcms/url_dispatcher.h>
 
 #include <iostream>
-//#include <cstdint>
 #include <boost/algorithm/string.hpp>
 
 #include <map>
@@ -46,5 +45,12 @@ namespace cwapper {
 
     class error: std::exception {};
 }
+
+std::ostream& operator<<(std::ostream&, const std::vector<std::string>&);
+std::ostream& operator<<(std::ostream&, const cwapper::data&);
+std::ostream& operator<<(std::ostream&, const std::vector<cwapper::data>&);
+template <typename T>
+    cppcms::http::response& operator<<(cppcms::http::response&, const T&);
+cppcms::http::response& operator<<(cppcms::http::response&, const cwapper::data&);
 
 #endif

@@ -55,8 +55,12 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
         supportingFiles.add(new SupportingFile("base.cpp.mustache", ".", "base.cpp"));
         supportingFiles.add(new SupportingFile("service.cpp.mustache", ".", "service.cpp"));
         supportingFiles.add(new SupportingFile("restful.hpp.mustache", ".", "restful.hpp"));
+        supportingFiles.add(new SupportingFile("api.json.mustache", ".", "api.json"));
+        supportingFiles.add(new SupportingFile("api.yaml.mustache", ".", "api.yaml"));
         supportingFiles.add(new SupportingFile("cwapper.hpp", ".", "cwapper.hpp"));
         supportingFiles.add(new SupportingFile("CMakeLists.txt", ".", "CMakeLists.txt"));
+        supportingFiles.add(new SupportingFile("Makefile", ".", "Makefile"));
+        supportingFiles.add(new SupportingFile("config.js", ".", "config.js"));
     }
 
     public void preprocessSwagger(Swagger swagger) {
@@ -182,18 +186,12 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
         Swagger swagger = (Swagger)objs.get("swagger");
         if(swagger != null) {
             try {
-                objs.put("swagger-yaml", Yaml.mapper().writeValueAsString(swagger)
-                                                      .replace("\\", "\\\\")
-                                                      .replace("\"", "\\\"")
-                                                      .replace("\n", "\\n"));
+                objs.put("swagger-yaml", Yaml.mapper().writeValueAsString(swagger));
             } catch (JsonProcessingException e) {
                 LOGGER.error(e.getMessage(), e);
             }
             try {
-                objs.put("swagger-json", new ObjectMapper().writeValueAsString(swagger)
-                                                      .replace("\\", "\\\\")
-                                                      .replace("\"", "\\\"")
-                                                      .replace("\n", "\\n"));
+                objs.put("swagger-json", new ObjectMapper().writeValueAsString(swagger));
             } catch (JsonProcessingException e) {
                 LOGGER.error(e.getMessage(), e);
             }

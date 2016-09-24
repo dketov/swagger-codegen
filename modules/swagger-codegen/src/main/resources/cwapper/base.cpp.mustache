@@ -30,6 +30,21 @@ std::ostream& operator<<(std::ostream& out, const std::vector<cwapper::data>& v)
     return out;
 }
 
+template <typename T>
+cppcms::http::response& operator<<(cppcms::http::response& r, const T& v) {
+    r.out() << v;
+    
+    return r;
+}
+
+cppcms::http::response& operator<<(cppcms::http::response& r, const cwapper::data& v) {
+    r.set_header("Content-Type", v.mimeType());
+
+    r.out() << v;
+    
+    return r;
+}
+
 namespace cwapper {
     restful::restful(cppcms::service &srv): cppcms::application(srv) {
 {{#x-cwapper}}
@@ -42,6 +57,11 @@ namespace cwapper {
 // ====================================================================
 {{#x-cwapper}}
     void restful::{{fid}}({{#pathParams}}std::string {{paramName}}{{#hasMore}}, {{/hasMore}}{{/pathParams}}) {
+{{#pathParams}}
+        // {{paramName}}: {{description}}
+        {{dataType}} _{{paramName}} = boost::lexical_cast<{{dataType}}>({{paramName}});
+{{/pathParams}}
+
         CORS();
 
         if (request().request_method() == "OPTIONS") {
@@ -55,6 +75,7 @@ namespace cwapper {
 {{/description}}
         if (request().request_method() == "{{httpMethod}}") {
 {{#allParams}}
+{{^isPathParam}}
             // {{paramName}}: {{description}}
             {{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}} {{paramName}} =
 {{#isBodyParam}}
@@ -64,15 +85,16 @@ namespace cwapper {
                {{#isListContainer}}boost::get<{{dataType}}<std::string> >(restful::parameter("{{paramName}}"));{{/isListContainer}}
                {{^isListContainer}}boost::lexical_cast<{{dataType}}>(boost::get<std::string>(restful::parameter("{{paramName}}")));{{/isListContainer}}
 {{/isBodyParam}}
+{{/isPathParam}}
 {{/allParams}}
 
-            std::cout << "DEBUG <method>: ${m.name} " << request().path_info()
+            std::cout << "DEBUG <method>: {{httpMethod}} " << request().path_info()
 {{#allParams}}
-                << std::endl << "\\t{{paramName}}=" << {{paramName}}
+                << std::endl << "\t{{paramName}}=" << {{paramName}}
 {{/allParams}}
             << std::endl;
 
-            {{#returnType}}response().out() << {{/returnType}}{{operationId}}({{#allParams}}{{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}});
+            {{#returnType}}response() << {{/returnType}}{{operationId}}({{#allParams}}{{#isPathParam}}_{{/isPathParam}}{{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}});
 
             return;
         }
@@ -178,11 +200,11 @@ namespace cwapper {
 
         if(boost::algorithm::contains(accept, "text/yaml")) {
             response().set_header("Content-Type", "text/yaml");
-            response().out() << "{{{swagger-yaml}}}";
+            response().out() << "";
             return;
         }
 
         response().set_header("Content-Type", "application/json");
-        response().out() << "{{{swagger-json}}}";
+        response().out() << "";
     }
 }
