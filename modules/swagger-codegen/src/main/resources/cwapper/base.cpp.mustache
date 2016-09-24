@@ -178,11 +178,11 @@ namespace cwapper {
 
         if(boost::algorithm::contains(accept, "text/yaml")) {
             response().set_header("Content-Type", "text/yaml");
-            response().out() << "{{{swagger-yaml}}}";
+            response().out() << "";
             return;
         }
 
         response().set_header("Content-Type", "application/json");
-        response().out() << "{{{swagger-json}}}";
+        response().out() << "";
     }
 }
