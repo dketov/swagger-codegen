@@ -6,7 +6,7 @@ help:
 build:  api
 
 run:	api
-	@echo "Point your browser to 'http://localhost:8888/swagger-ui/?url=/api.yaml'"
+	@echo "Point your browser to 'http://localhost:{{serverPort}}/swagger-ui/?url=/api.yaml'"
 	./api -c config.js
 
 api:	

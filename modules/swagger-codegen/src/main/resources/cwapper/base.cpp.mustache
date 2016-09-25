@@ -154,13 +154,15 @@ namespace cwapper {
     }
 
     cwapper::parameter restful::parameter(std::string name) {
+        using namespace boost::algorithm;
+    
         cppcms::http::request::form_type form = request().post_or_get();
         cwapper::parameter result;
 
         for(cppcms::http::request::form_type::iterator it = form.begin(); it != form.end(); it++) {
             std::string key = it->first, value = it->second;
 
-            if(key != name)
+            if(name != trim_right_copy_if(key, is_any_of("[]"))) // swagger-ui uses p[]=...&p[]=... while swagger-editor uses p=...&p=...
                 continue;
 
             try {

@@ -57,54 +57,65 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
         supportingFiles.add(new SupportingFile("restful.hpp.mustache", ".", "restful.hpp"));
         supportingFiles.add(new SupportingFile("api.json.mustache", ".", "api.json"));
         supportingFiles.add(new SupportingFile("api.yaml.mustache", ".", "api.yaml"));
+        supportingFiles.add(new SupportingFile("config.js.mustache", ".", "config.js"));
+        supportingFiles.add(new SupportingFile("Makefile.mustache", ".", "Makefile"));
         supportingFiles.add(new SupportingFile("cwapper.hpp", ".", "cwapper.hpp"));
         supportingFiles.add(new SupportingFile("CMakeLists.txt", ".", "CMakeLists.txt"));
-        supportingFiles.add(new SupportingFile("Makefile", ".", "Makefile"));
-        supportingFiles.add(new SupportingFile("config.js", ".", "config.js"));
     }
 
     public void preprocessSwagger(Swagger swagger) {
-        Map<String, Path> swaggerPaths = swagger.getPaths();
-
-        if(swaggerPaths == null)
-            return;
-
-        for(String uri: swaggerPaths.keySet()) {
-            Path path = swaggerPaths.get(uri);
-            int paramQty = 0;
-
-            path.setVendorExtension("x-cwappper-path", uri.replace("/", "_").replace("{", "").replace("}", ""));
-
-            if(path.getOperations() == null)
-                continue;
-
-            for(Operation op: path.getOperations()) {
-
-                if(op.getParameters() == null)
-                    continue;
-
-                for(Parameter param: op.getParameters()) {
-                    if(!(param instanceof PathParameter))
-                        continue;
-
-                    String uriParam = String.format("{%s}", param.getName());
-                    String pattern = "([^/]+)"; // type == string or whatever
-                    if(((PathParameter)param).getType() == "integer")
-                        pattern = "(\\\\d+)";
-
-                    if(uri.contains(uriParam)) {
-                        uri = uri.replace(uriParam, pattern);
-                        paramQty++;
-                    }
-                }
-
+        String host = swagger.getHost();
+        String port = "8888";
+        if (host != null) {
+            String[] parts = host.split(":");
+            if (parts.length > 1) {
+                port = parts[1];
             }
-
-            path.setVendorExtension("x-cwappper-paramQty", paramQty);
-            path.setVendorExtension("x-cwappper-uri", uri);
         }
 
-        additionalProperties().put("x-cwappper-paths", swaggerPaths.values());
+        this.additionalProperties.put("serverPort", port);
+    
+        //~ Map<String, Path> swaggerPaths = swagger.getPaths();
+
+        //~ if(swaggerPaths == null)
+            //~ return;
+
+        //~ for(String uri: swaggerPaths.keySet()) {
+            //~ Path path = swaggerPaths.get(uri);
+            //~ int paramQty = 0;
+
+            //~ path.setVendorExtension("x-cwappper-path", uri.replace("/", "_").replace("{", "").replace("}", ""));
+
+            //~ if(path.getOperations() == null)
+                //~ continue;
+
+            //~ for(Operation op: path.getOperations()) {
+
+                //~ if(op.getParameters() == null)
+                    //~ continue;
+
+                //~ for(Parameter param: op.getParameters()) {
+                    //~ if(!(param instanceof PathParameter))
+                        //~ continue;
+
+                    //~ String uriParam = String.format("{%s}", param.getName());
+                    //~ String pattern = "([^/]+)"; // type == string or whatever
+                    //~ if(((PathParameter)param).getType() == "integer")
+                        //~ pattern = "(\\\\d+)";
+
+                    //~ if(uri.contains(uriParam)) {
+                        //~ uri = uri.replace(uriParam, pattern);
+                        //~ paramQty++;
+                    //~ }
+                //~ }
+
+            //~ }
+
+            //~ path.setVendorExtension("x-cwappper-paramQty", paramQty);
+            //~ path.setVendorExtension("x-cwappper-uri", uri);
+        //~ }
+
+        //~ additionalProperties().put("x-cwappper-paths", swaggerPaths.values());
     }
 
     private String cwapperRE(CodegenOperation op) {
@@ -136,7 +147,7 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
         if (ops == null)
             return objs;
 
-        class CwapperPath {
+        class CwapperPath implements Comparable<CwapperPath> {
             public String path, re, fid;
 
             public List<CodegenOperation> operations = new ArrayList<CodegenOperation>();
@@ -157,9 +168,12 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
 
                 operations.add(op);
             }
+            public int compareTo(CwapperPath other) {
+                return re.compareTo(other.re);
+            }
         }
 
-        Map<String, CwapperPath> cwapperMap = new HashMap<String, CwapperPath> ();
+        Map<String, CwapperPath> cwapperMap = new TreeMap<String, CwapperPath> ();
 
         for(CodegenOperation operation : ops) {
             String re = cwapperRE(operation);
