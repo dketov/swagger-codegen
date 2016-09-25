@@ -10,7 +10,7 @@
 
 {{#models}}
 {{#model}}
-typedef cwapper::data {{name}};
+typedef boost::property_tree::ptree {{name}};
 {{/model}}
 {{/models}}
 
@@ -30,9 +30,16 @@ namespace cwapper {
         void {{fid}}({{#pathParams}}std::string {{paramName}}{{#hasMore}}, {{/hasMore}}{{/pathParams}});
 {{/x-cwapper}}
 
-        std::vector<cwapper::data> array(cwapper::data);
-        cwapper::data body();
+        template <typename T>
+            void result(const T&);
+
+        void result(const boost::property_tree::ptree&);
+        
+        std::vector<boost::property_tree::ptree> array(boost::property_tree::ptree);
+        boost::property_tree::ptree body();
         cwapper::parameter parameter(std::string);
+        cwapper::parameter parameter(std::string, std::string);
+        cwapper::parameter header(std::string);
         void CORS();
         void __api__();
     };

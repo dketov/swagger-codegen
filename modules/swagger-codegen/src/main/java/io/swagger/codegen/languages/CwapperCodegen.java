@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
     protected static final Logger LOGGER = LoggerFactory.getLogger(CwapperCodegen.class);
+    private String port = "8888";
 
     public CodegenType getTag() {
         return CodegenType.SERVER;
@@ -37,7 +38,7 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
 
     public CwapperCodegen() {
         super();
-
+        
         templateDir = getName();
 
         languageSpecificPrimitives = new HashSet<String>(
@@ -65,7 +66,7 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
 
     public void preprocessSwagger(Swagger swagger) {
         String host = swagger.getHost();
-        String port = "8888";
+
         if (host != null) {
             String[] parts = host.split(":");
             if (parts.length > 1) {
@@ -74,48 +75,6 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
         }
 
         this.additionalProperties.put("serverPort", port);
-    
-        //~ Map<String, Path> swaggerPaths = swagger.getPaths();
-
-        //~ if(swaggerPaths == null)
-            //~ return;
-
-        //~ for(String uri: swaggerPaths.keySet()) {
-            //~ Path path = swaggerPaths.get(uri);
-            //~ int paramQty = 0;
-
-            //~ path.setVendorExtension("x-cwappper-path", uri.replace("/", "_").replace("{", "").replace("}", ""));
-
-            //~ if(path.getOperations() == null)
-                //~ continue;
-
-            //~ for(Operation op: path.getOperations()) {
-
-                //~ if(op.getParameters() == null)
-                    //~ continue;
-
-                //~ for(Parameter param: op.getParameters()) {
-                    //~ if(!(param instanceof PathParameter))
-                        //~ continue;
-
-                    //~ String uriParam = String.format("{%s}", param.getName());
-                    //~ String pattern = "([^/]+)"; // type == string or whatever
-                    //~ if(((PathParameter)param).getType() == "integer")
-                        //~ pattern = "(\\\\d+)";
-
-                    //~ if(uri.contains(uriParam)) {
-                        //~ uri = uri.replace(uriParam, pattern);
-                        //~ paramQty++;
-                    //~ }
-                //~ }
-
-            //~ }
-
-            //~ path.setVendorExtension("x-cwappper-paramQty", paramQty);
-            //~ path.setVendorExtension("x-cwappper-uri", uri);
-        //~ }
-
-        //~ additionalProperties().put("x-cwappper-paths", swaggerPaths.values());
     }
 
     private String cwapperRE(CodegenOperation op) {
@@ -125,7 +84,7 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
             String pathParam = String.format("{%s}", param.baseName);
             String pattern = "([^/]+)"; // param.isString == string or whatever
 
-            //if(param.isInteger || param.isLong) o_O NullPointerException ???
+            //~ if(param.isInteger || param.isLong) // o_O NullPointerException ???
                 //~ pattern = "(\\\\d+)";
 
             //~ if(param.isFloat || param.isDouble)
@@ -219,5 +178,9 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
 
     public String escapeQuotationMark(String input) {
         return input.replace("\"", "\\\"");
+    }
+    
+    public String removeNonNameElementToCamelCase(String name) {
+        return removeNonNameElementToCamelCase(name, "[-:;#]");
     }
 }

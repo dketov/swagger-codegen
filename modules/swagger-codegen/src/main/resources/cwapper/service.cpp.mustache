@@ -13,9 +13,9 @@ public:
 {{#x-cwapper}}
 {{#operations}}
     {{#returnType}}{{returnType}}{{^returnSimpleType}}<{{returnBaseType}}>{{/returnSimpleType}}{{/returnType}}{{^returnType}}void{{/returnType}} {{operationId}}({{#allParams}}{{dataType}}{{#isListContainer}}<{{baseType}}>{{/isListContainer}} {{paramName}}{{#hasMore}}, {{/hasMore}}{{/allParams}}) {
-        std::cout << "DEBUG: <handler:{{operationId}}>"
+        std::cerr << "DEBUG: <handler:{{operationId}}>"
     {{#allParams}}
-            << std::endl << "\t{{paramName}}=" << {{paramName}}
+            << std::endl << "{{paramName}}=(" << {{paramName}} << ")" 
     {{/allParams}}
             << std::endl;
     {{#bodyParams}}

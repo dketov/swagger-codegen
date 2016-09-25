@@ -10,15 +10,15 @@
 #include <cppcms/url_dispatcher.h>
 
 #include <iostream>
-#include <boost/algorithm/string.hpp>
-
-#include <map>
 #include <vector>
+
+#include <boost/algorithm/string.hpp>
 
 #include <boost/variant.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/exceptions.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -27,30 +27,19 @@ namespace cwapper {
         std::string,
         std::vector<std::string>
     > parameter;
-    typedef std::map<std::string, parameter> qstring;
-
-    enum contentType { JSON, XML };
-
-    struct data {
-        contentType type;
-        boost::property_tree::ptree tree;
-
-        data(contentType value = JSON) { type = value; };
-        std::string mimeType() const {
-            std::string contentTypes[] = { "application/json", "text/xml" };
-
-            return contentTypes[this->type];
-        };
-    };
 
     class error: std::exception {};
 }
 
-std::ostream& operator<<(std::ostream&, const std::vector<std::string>&);
-std::ostream& operator<<(std::ostream&, const cwapper::data&);
-std::ostream& operator<<(std::ostream&, const std::vector<cwapper::data>&);
+std::ostream& operator<<(std::ostream&, const boost::property_tree::ptree&);
+
 template <typename T>
-    cppcms::http::response& operator<<(cppcms::http::response&, const T&);
-cppcms::http::response& operator<<(cppcms::http::response&, const cwapper::data&);
+std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
+    for(const T& e: v) {
+        out << e << ", ";
+    }
+    
+    return out;
+}
 
 #endif
