@@ -3,9 +3,11 @@
         "api" : "http",
         "port" : {{serverPort}}
     },
-    "http": { "script": "{{basePathWithoutHost}}" },
+    "http": {
+        "script": "{{basePathWithoutHost}}",
+        "rewrite" : [ { "regex" : "/", "pattern" : "{{basePathWithoutHost}}/__api__" } ]
+    },
     "file_server" : {
         "enable": true
     }
 }
-

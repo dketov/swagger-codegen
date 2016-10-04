@@ -189,13 +189,24 @@ namespace cwapper {
         CORS();
         std::string accept = request().http_accept();
 
-        if(boost::algorithm::contains(accept, "text/yaml")) {
-            response().content_type("text/yaml");
-            response().out() << "";
+        if(boost::algorithm::contains(accept, "application/json")) {
+            response().content_type("application/json");
+            std::ifstream api("api.json", std::ios::binary);
+            std::copy(
+                std::istreambuf_iterator<char>(api),
+                std::istreambuf_iterator<char>(),
+                std::ostreambuf_iterator<char>(response().out())
+            );
+
             return;
         }
 
-        response().content_type("application/json");
-        response().out() << "";
+        response().content_type("application/yaml");
+        std::ifstream api("api.yaml", std::ios::binary);
+        std::copy(
+            std::istreambuf_iterator<char>(api),
+            std::istreambuf_iterator<char>(),
+            std::ostreambuf_iterator<char>(response().out())
+        );
     }
 }

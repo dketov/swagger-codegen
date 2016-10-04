@@ -18,10 +18,10 @@ add_custom_command(
 )
 	
 add_custom_command(
-	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/swagger-ui
+	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ui
 	DEPENDS master.zip
 	COMMAND 7z x -y master.zip swagger-ui-master/dist
-	COMMAND mv -n swagger-ui-master/dist ${CMAKE_CURRENT_SOURCE_DIR}/swagger-ui
+	COMMAND mv -n swagger-ui-master/dist ${CMAKE_CURRENT_SOURCE_DIR}/ui
 )
 
 add_custom_target(ui

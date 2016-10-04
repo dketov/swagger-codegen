@@ -6,8 +6,8 @@ help:
 build:  api
 
 run:	api
-	@echo "Point your browser to 'http://localhost:{{serverPort}}/swagger-ui/?url=/api.yaml'"
+	@echo "Point your browser to 'http://localhost:{{serverPort}}/ui/'"
 	./api -c config.js
 
-api:	
+api:
 	mkdir -p __build__ && cd __build__ && cmake .. && make
