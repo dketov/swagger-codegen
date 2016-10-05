@@ -1,6 +1,7 @@
 package io.swagger.codegen.languages;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.swagger.codegen.*;
@@ -60,8 +61,10 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
         supportingFiles.add(new SupportingFile("api.yaml.mustache", ".", "api.yaml"));
         supportingFiles.add(new SupportingFile("config.js.mustache", ".", "config.js"));
         supportingFiles.add(new SupportingFile("Makefile.mustache", ".", "Makefile"));
+        supportingFiles.add(new SupportingFile("index.html.mustache", "ui", "index.html"));
         supportingFiles.add(new SupportingFile("cwapper.hpp", ".", "cwapper.hpp"));
         supportingFiles.add(new SupportingFile("CMakeLists.txt", ".", "CMakeLists.txt"));
+        supportingFiles.add(new SupportingFile("ui-2.2.5.zip", ".", "ui-2.2.5.zip"));
     }
 
     public void preprocessSwagger(Swagger swagger) {
@@ -164,7 +167,9 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
                 LOGGER.error(e.getMessage(), e);
             }
             try {
-                objs.put("swagger-json", new ObjectMapper().writeValueAsString(swagger));
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+                objs.put("swagger-json", mapper.writeValueAsString(swagger));
             } catch (JsonProcessingException e) {
                 LOGGER.error(e.getMessage(), e);
             }

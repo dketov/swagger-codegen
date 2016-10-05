@@ -13,17 +13,11 @@ add_dependencies(api ui)
 target_link_libraries(api cppcms booster)
 
 add_custom_command(
-	OUTPUT master.zip
-	COMMAND wget -c https://github.com/swagger-api/swagger-ui/archive/master.zip
-)
-	
-add_custom_command(
 	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/ui
-	DEPENDS master.zip
-	COMMAND 7z x -y master.zip swagger-ui-master/dist
-	COMMAND mv -n swagger-ui-master/dist ${CMAKE_CURRENT_SOURCE_DIR}/ui
+	DEPENDS ui-2.2.5.zip
+	COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR} && 7z x -y ui-2.2.5.zip
 )
 
 add_custom_target(ui
-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/swagger-ui
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/ui
 )
