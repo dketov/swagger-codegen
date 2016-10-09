@@ -35,8 +35,9 @@ std::ostream& operator<<(std::ostream&, const boost::property_tree::ptree&);
 
 template <typename T>
 std::ostream& operator<<(std::ostream& out, const std::vector<T>& v) {
-    for(const T& e: v) {
-        out << e << ", ";
+    typedef typename std::vector<T>::const_iterator TI;
+    for(TI it = v.begin(); it != v.end(); it++) {
+        out << *it << ", ";
     }
     
     return out;

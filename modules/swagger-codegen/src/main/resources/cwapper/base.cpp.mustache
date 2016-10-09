@@ -85,7 +85,7 @@ namespace cwapper {
     }
     
     boost::property_tree::ptree restful::body() {
-        std::pair<void*, ssize_t> post = request().raw_post_data();
+        std::pair<void*, size_t> post = request().raw_post_data();
         std::istringstream ss(std::string((char *)post.first, post.second));
 
         std::cerr << "DEBUG <body>:\t" << request().content_type() << std::endl;

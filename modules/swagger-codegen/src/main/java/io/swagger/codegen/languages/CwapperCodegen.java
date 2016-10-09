@@ -65,6 +65,8 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
         supportingFiles.add(new SupportingFile("cwapper.hpp", ".", "cwapper.hpp"));
         supportingFiles.add(new SupportingFile("CMakeLists.txt", ".", "CMakeLists.txt"));
         supportingFiles.add(new SupportingFile("ui-2.2.5.zip", ".", "ui-2.2.5.zip"));
+        supportingFiles.add(new SupportingFile("cwapper-server.vcxproj", null, "cwapper-server.vcxproj"));
+        supportingFiles.add(new SupportingFile("cwapper-server.vcxproj.filters", null, "cwapper-server.vcxproj.filters"));
     }
 
     public void preprocessSwagger(Swagger swagger) {
