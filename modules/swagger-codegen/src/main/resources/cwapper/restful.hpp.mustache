@@ -34,7 +34,8 @@ namespace cwapper {
             void result(const T&);
 
         void result(const boost::property_tree::ptree&);
-        
+        void result(const std::vector<boost::property_tree::ptree> &);
+
         std::vector<boost::property_tree::ptree> array(boost::property_tree::ptree);
         boost::property_tree::ptree body();
         cwapper::parameter parameter(std::string);

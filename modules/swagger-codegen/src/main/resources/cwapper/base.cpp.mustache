@@ -165,6 +165,21 @@ namespace cwapper {
         response().out() << v;
     }
     
+    void restful::result(const std::vector<boost::property_tree::ptree> &v) {
+        boost::property_tree::ptree items;
+        boost::property_tree::ptree root;
+
+        for(std::vector<boost::property_tree::ptree>::const_iterator it = v.begin(); it != v.end(); it++) {
+            if(request().http_accept() == "application/xml" || request().http_accept() == "text/xml")
+                items.push_back(std::make_pair("item", *it));
+            else
+                items.push_back(std::make_pair("", *it));
+        }
+
+        root.add_child("array", items);
+        result(root);
+    }
+    
     void restful::result(const boost::property_tree::ptree& v) {        
         if (request().http_accept() == "application/xml" || request().http_accept() == "text/xml") {
             response().content_type(request().http_accept());
