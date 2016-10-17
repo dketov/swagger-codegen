@@ -59,14 +59,18 @@ public class CwapperCodegen extends DefaultCodegen implements CodegenConfig {
         supportingFiles.add(new SupportingFile("restful.hpp.mustache", "restful.hpp"));
         supportingFiles.add(new SupportingFile("api.json.mustache", "api.json"));
         supportingFiles.add(new SupportingFile("api.yaml.mustache", "api.yaml"));
-        supportingFiles.add(new SupportingFile("config.js.mustache", "config.js"));
+        supportingFiles.add(new SupportingFile("config.js.template.mustache", "config.js.template"));
         supportingFiles.add(new SupportingFile("Makefile.mustache", "Makefile"));
-        supportingFiles.add(new SupportingFile("index.html.mustache", "ui", "index.html"));
         supportingFiles.add(new SupportingFile("cwapper.hpp", "cwapper.hpp"));
         supportingFiles.add(new SupportingFile("CMakeLists.txt", "CMakeLists.txt"));
         supportingFiles.add(new SupportingFile("ui-2.2.5.zip", "ui-2.2.5.zip"));
         supportingFiles.add(new SupportingFile("cwapper-server.vcxproj", "cwapper-server.vcxproj"));
         supportingFiles.add(new SupportingFile("cwapper-server.vcxproj.filters", "cwapper-server.vcxproj.filters"));
+
+        supportingFiles.add(new SupportingFile("modelbase-header.mustache", "ModelBase.h"));
+        supportingFiles.add(new SupportingFile("modelbase-source.mustache", "ModelBase.cpp"));
+        supportingFiles.add(new SupportingFile("jsonbody-header.mustache", "JsonBody.h"));
+        supportingFiles.add(new SupportingFile("jsonbody-source.mustache", "JsonBody.cpp"));        
     }
 
     public void preprocessSwagger(Swagger swagger) {

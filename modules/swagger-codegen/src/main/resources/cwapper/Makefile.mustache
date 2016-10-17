@@ -1,17 +1,28 @@
+PORT = {{serverPort}}
+HOST = localhost
+IP = $(shell getent ahostsv4 $(HOST) | awk '!n++ {print $$1}')
+
 help:
-	@echo make help		- This help
-	@echo make build	- Build sources
-	@echo make run		- Run service
-	@echo make clean	- Clean build results
+	@echo make help				- This help
+	@echo make build			- Build sources
+	@echo make run [PORT=xxxx] [HOST=zzzz] 	- Run service
+	@echo make clean			- Clean build results
 
 build:  api
 
-run:	api
-	@echo "Point your browser to 'http://localhost:{{serverPort}}/ui/'"
+run:	api config.js ui/index.html
+	@echo "Point your browser to 'http://$(HOST):$(PORT)/ui/'"
 	./api -c config.js
+
+.PHONY: config.js ui/index.html
+config.js ui/index.html:
+	sed -e s/@@PORT@@/$(PORT)/g \
+	    -e s/@@HOST@@/$(HOST)/g \
+	    -e s/@@IP@@/$(IP)/g \
+	    $@.template > $@
 
 api:
 	mkdir -p __build__ && cd __build__ && cmake .. && make
 
 clean:
-	rm -fR api
+	rm -fR api ui __build__
